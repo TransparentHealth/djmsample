@@ -1,5 +1,5 @@
 """
-Django settings for the Djmongo Sample  project.
+Django settings for the Djmongo Sample project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/1.6/topics/settings/
@@ -8,31 +8,34 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+
 import os
 from django.contrib.messages import constants as messages
+from .utils import bool_env
+import dj_database_url
+from getenv import env
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_DIR = os.path.join(BASE_DIR, '..')
 DATABASE_DIR = os.path.join(BASE_DIR, 'db')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '6j6*7s@yewc^!uk9m2t6ezpj6)_ffz$ngne4@$2*$3&xswx5_1'
+SECRET_KEY = env(
+    'SECRET_KEY', '@+ttixefm9-bu1eknb4k^5dj(f1z0^97b$zan9akdr^4s8cc54')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool_env(env('DEBUG', True))
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = bool_env(env('DEBUG', True))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', ]
 
 
 # Application definition
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     # Django apps
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,7 +48,7 @@ INSTALLED_APPS = (
     'djmongo',
     'djmongo.accounts',
     'djmongo.console',
-    'djmongo.search',
+    'djmongo.read',
     'djmongo.dataimport',
     'djmongo.write',
     'djmongo.aggregations',
@@ -55,9 +58,11 @@ INSTALLED_APPS = (
     'corsheaders',
     'bootstrapform',
     'widget_tweaks',
-)
+    'django_extensions',
+]
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -90,10 +95,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(DATABASE_DIR, 'db.sqlite3'),
-    }
+    'default': dj_database_url.config(
+        default=env('DATABASES_CUSTOM',
+                    'sqlite:///{}/db/db.sqlite3'.format(BASE_DIR))
+    ),
 }
 
 # Internationalization
@@ -133,16 +138,15 @@ MEDIA_URL = '/media/'
 CORS_ORIGIN_ALLOW_ALL = True
 
 CORS_ALLOW_METHODS = ('GET', 'POST',)
-MIDDLEWARE_CLASSES += ('corsheaders.middleware.CorsMiddleware',)
+MIDDLEWARE += ('corsheaders.middleware.CorsMiddleware',)
 
 
 # Djmongo Settings --------------
-MONGO_HOST = "127.0.0.1"
-MONGO_PORT = 27017
-MONGO_LIMIT = 200
-MONGODB_CLIENT = "mongodb://127.0.0.1:27017"
+MONGODB_CLIENT = env("MONGODB_CLIENT", "mongodb://127.0.0.1:27017")
+MONGO_LIMIT = int(env("MONGO_LIMIT", "200"))
 
-# Authentication Backebnds
+
+# Authentication Backends
 AUTHENTICATION_BACKENDS = ('djmongo.accounts.auth.HTTPAuthBackend',
                            'django.contrib.auth.backends.ModelBackend',)
 # Login URL
@@ -171,3 +175,9 @@ TEMPLATES = [
         },
     },
 ]
+# Expire in 30 minutes
+SESSION_COOKIE_AGE = int(env('SESSION_COOKIE_AGE', int(30 * 60)))
+
+# Expire when browser is closed.
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_SAMESITE = None
